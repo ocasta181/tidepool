@@ -21,7 +21,7 @@ plan:
 auth:
     bash scripts/auth.sh
 
-# SSH in and run openclaw onboard (interactive)
+# Automated onboarding: config, Slack, gateway daemon
 onboard:
     bash scripts/onboard.sh
 

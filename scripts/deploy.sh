@@ -90,6 +90,14 @@ else
       -e "openclaw_ssh_keys=['$SSH_PUBKEY']" \
       -e tailscale_enabled=true
 REMOTE
+
+  # Post-ansible setup: install Claude Code CLI and fix pnpm ownership
+  echo "Installing Claude Code CLI..."
+  ssh "root@${IP}" bash <<'POSTSETUP'
+    set -e
+    su - openclaw -c "pnpm install -g @anthropic-ai/claude-code"
+    chown -R openclaw:openclaw /home/openclaw/.local/share/pnpm
+POSTSETUP
 fi
 
 echo ""

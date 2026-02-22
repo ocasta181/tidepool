@@ -51,10 +51,12 @@ droplet_id() {
 }
 
 # SSH to the droplet as the openclaw user
+# .bashrc exits early for non-interactive shells, so we prepend the pnpm PATH explicitly
+REMOTE_PATH="/home/openclaw/.local/share/pnpm:/home/openclaw/.local/bin"
 remote() {
   local ip
   ip=$(require_droplet)
-  ssh "${OPENCLAW_USER}@${ip}" "$@"
+  ssh "${OPENCLAW_USER}@${ip}" "PATH=${REMOTE_PATH}:\$PATH $*"
 }
 
 # SSH to the droplet as root
