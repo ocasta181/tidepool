@@ -53,6 +53,18 @@ logs agent:
 snapshot agent:
     bash scripts/snapshot.sh {{agent}}
 
+# List all agents and their deployment state
+agents:
+    #!/usr/bin/env bash
+    for dir in agents/*/; do
+      name=$(basename "$dir")
+      if [[ -f "$dir/.droplet" ]]; then
+        echo "$name  $(cat "$dir/.droplet")"
+      else
+        echo "$name  (not deployed)"
+      fi
+    done
+
 # Deploy all agents
 deploy-all:
     #!/usr/bin/env bash

@@ -107,6 +107,15 @@ REMOTE
 POSTSETUP
 fi
 
+# Connect to Tailscale if auth key is provided
+if [[ -n "${TAILSCALE_AUTH_KEY:-}" ]]; then
+  echo "Connecting to Tailscale..."
+  ssh "root@${IP}" "tailscale up --authkey='${TAILSCALE_AUTH_KEY}' --hostname='${DROPLET_NAME}'"
+  echo "Tailscale connected."
+else
+  echo "TAILSCALE_AUTH_KEY not set in .env — skipping Tailscale. Run manually: just ssh $AGENT_NAME then 'sudo tailscale up'"
+fi
+
 echo ""
 echo "=== Droplet ready at $IP ==="
 echo ""
