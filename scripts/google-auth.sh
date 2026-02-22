@@ -26,20 +26,38 @@ fi
 echo "Pushing Google OAuth credentials to droplet..."
 scp "$CLIENT_SECRET" "${OPENCLAW_USER}@${IP}:~/client_secret.json"
 
+# gog needs a keyring password on headless servers (no GUI keyring available).
+# GOG_KEYRING_PASSWORD can be set in .env; defaults to 'openclaw' if unset.
+GOG_KR_PASS="${GOG_KEYRING_PASSWORD:-openclaw}"
+GOG_ENV="GOG_KEYRING_PASSWORD='${GOG_KR_PASS}'"
+
 # Register credentials with gog
 echo "Registering credentials with gog..."
-remote "gog auth credentials ~/client_secret.json"
+remote "${GOG_ENV} gog auth credentials ~/client_secret.json"
 
-# Run interactive OAuth flow (requires browser)
+# Run remote OAuth flow (two-step: prints URL, then exchanges code)
+# This avoids the localhost callback problem when running on a remote server.
 echo ""
-echo "Starting Google OAuth flow..."
-echo "This will print a URL — open it in your browser to authorize."
+echo "=== Step 1: Getting authorization URL ==="
 echo ""
-ssh -t "${OPENCLAW_USER}@${IP}" "PATH=${REMOTE_PATH}:\$PATH gog auth add ${GOOGLE_ACCOUNT} --services gmail,calendar,drive,contacts,docs,sheets"
+AUTH_URL=$(remote "${GOG_ENV} gog auth add ${GOOGLE_ACCOUNT} --services gmail,calendar,drive,contacts,docs,sheets --remote --step 1 --plain 2>&1")
+echo "Open this URL in your browser and authorize:"
+echo ""
+echo "$AUTH_URL"
+echo ""
+echo "After authorizing, Google will redirect you to a URL starting with http://127.0.0.1/..."
+echo "Copy the FULL redirect URL from your browser's address bar (even if the page shows an error)."
+echo ""
+read -rp "Paste the redirect URL here: " REDIRECT_URL
+
+echo ""
+echo "=== Step 2: Exchanging authorization code ==="
+echo ""
+remote "${GOG_ENV} gog auth add ${GOOGLE_ACCOUNT} --services gmail,calendar,drive,contacts,docs,sheets --remote --step 2 --auth-url '${REDIRECT_URL}'"
 
 echo ""
 echo "Verifying..."
-remote "gog auth list"
+remote "${GOG_ENV} gog auth list"
 
 echo ""
 echo "Google Workspace auth complete."
