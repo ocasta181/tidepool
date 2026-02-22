@@ -25,6 +25,10 @@ auth:
 onboard:
     bash scripts/onboard.sh
 
+# Connect Google Workspace (Gmail, Calendar, Drive) — interactive, one-time per droplet
+google-auth:
+    bash scripts/google-auth.sh
+
 # Apply security hardening to openclaw.json
 secure:
     bash scripts/secure.sh

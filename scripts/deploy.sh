@@ -91,12 +91,18 @@ else
       -e tailscale_enabled=true
 REMOTE
 
-  # Post-ansible setup: install Claude Code CLI and fix pnpm ownership
-  echo "Installing Claude Code CLI..."
+  # Post-ansible setup: install Claude Code CLI, gog CLI, and fix pnpm ownership
+  echo "Installing Claude Code CLI and gog CLI..."
   ssh "root@${IP}" bash <<'POSTSETUP'
     set -e
     su - openclaw -c "pnpm install -g @anthropic-ai/claude-code"
     chown -R openclaw:openclaw /home/openclaw/.local/share/pnpm
+
+    # Install gog (Google Workspace CLI) from pre-built binary
+    curl -fsSL https://github.com/steipete/gogcli/releases/download/v0.11.0/gogcli_0.11.0_linux_amd64.tar.gz \
+      | tar xz -C /tmp
+    mv /tmp/gog /usr/local/bin/gog
+    chmod +x /usr/local/bin/gog
 POSTSETUP
 fi
 

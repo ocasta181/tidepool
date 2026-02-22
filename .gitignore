@@ -2,3 +2,7 @@
 .droplet
 .snapshot
 .claude
+
+*secret.json
+
+tmp/
