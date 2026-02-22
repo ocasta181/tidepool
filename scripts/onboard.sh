@@ -3,13 +3,18 @@ AGENT_NAME="${1:?Usage: $0 <agent-name>}"
 source "$(dirname "$0")/config.sh"
 
 # Fully automated onboarding: sets up OpenClaw config, Claude Max auth with
-# auto-refresh, Slack channel, and gateway systemd service. No interactive prompts.
+# auto-refresh, channels (Slack + Telegram), voice, and gateway systemd service.
+# No interactive prompts.
 #
 # Requires in agents/<name>/agent.env:
-#   SLACK_BOT_TOKEN  - Slack bot token (xoxb-...)
-#   SLACK_APP_TOKEN  - Slack app-level token (xapp-...)
+#   SLACK_BOT_TOKEN      - Slack bot token (xoxb-...)
+#   SLACK_APP_TOKEN      - Slack app-level token (xapp-...)
+# Optional in agents/<name>/agent.env:
+#   TELEGRAM_BOT_TOKEN   - Telegram bot token (from @BotFather)
+#   ELEVENLABS_API_KEY   - ElevenLabs API key (for TTS)
+#   OPENAI_API_KEY       - OpenAI API key (for Whisper STT)
 # Requires:
-#   just auth <agent>  - must have been run first (Claude credentials on droplet)
+#   just auth <agent>    - must have been run first (Claude credentials on droplet)
 
 IP=$(require_droplet)
 
@@ -67,8 +72,9 @@ rm -f /tmp/openclaw-cron
 echo "Running initial token refresh..."
 remote "~/.openclaw/refresh-token.sh"
 
-# --- 4. Enable Slack plugin and add channel ---
+# --- 4. Enable channels ---
 
+# Slack
 echo "Enabling Slack plugin..."
 remote "openclaw plugins enable slack"
 
@@ -80,12 +86,51 @@ remote "openclaw channels add --channel slack \
 # Disable thread replies in DMs (send flat messages instead)
 remote "openclaw config set channels.slack.replyToMode off"
 
-# --- 5. Restart gateway ---
+# Telegram (optional — only if TELEGRAM_BOT_TOKEN is set)
+if [[ -n "${TELEGRAM_BOT_TOKEN:-}" ]]; then
+  echo "Enabling Telegram plugin..."
+  remote "openclaw plugins enable telegram"
+
+  echo "Adding Telegram channel..."
+  remote "openclaw channels add --channel telegram --token '${TELEGRAM_BOT_TOKEN}'"
+else
+  echo "TELEGRAM_BOT_TOKEN not set — skipping Telegram."
+fi
+
+# --- 5. Configure voice (TTS + STT) ---
+
+# Set ElevenLabs API key for TTS if provided
+if [[ -n "${ELEVENLABS_API_KEY:-}" ]]; then
+  echo "Configuring ElevenLabs TTS..."
+  remote "openclaw config set tts.provider elevenlabs"
+  remote "openclaw config set tts.elevenlabs.apiKey '${ELEVENLABS_API_KEY}'"
+else
+  echo "ELEVENLABS_API_KEY not set — using Edge TTS (free fallback)."
+fi
+
+# Set OpenAI API key for Whisper STT if provided
+if [[ -n "${OPENAI_API_KEY:-}" ]]; then
+  echo "Configuring OpenAI Whisper STT..."
+  remote "openclaw config set stt.provider openai"
+  remote "openclaw config set stt.openai.apiKey '${OPENAI_API_KEY}'"
+else
+  echo "OPENAI_API_KEY not set — STT will use local Whisper if installed."
+fi
+
+# --- 6. Set persistent environment vars (GOG_KEYRING_PASSWORD) ---
+
+echo "Setting persistent environment variables..."
+remote "mkdir -p ~/.config/environment.d"
+ssh "${OPENCLAW_USER}@${IP}" "cat > ~/.config/environment.d/openclaw.conf" <<EOF
+GOG_KEYRING_PASSWORD=${GOG_KEYRING_PASSWORD:-openclaw}
+EOF
+
+# --- 7. Restart gateway ---
 
 echo "Restarting gateway..."
 remote "openclaw gateway restart"
 
-# --- 6. Verify ---
+# --- 8. Verify ---
 
 echo ""
 echo "=== Verification ==="
@@ -98,6 +143,7 @@ echo ""
 echo "=== Onboarding complete ==="
 echo ""
 echo "Next steps:"
-echo "  just secure $AGENT_NAME    Apply security hardening"
-echo "  just status $AGENT_NAME    Check all services"
-echo "  Message the bot on Slack to test"
+echo "  just secure $AGENT_NAME        Apply security hardening"
+echo "  just status $AGENT_NAME        Check all services"
+echo "  just google-auth $AGENT_NAME   Connect Google Workspace"
+echo "  Message the bot on Slack or Telegram to test"
