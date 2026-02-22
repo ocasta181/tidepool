@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+AGENT_NAME="${1:?Usage: $0 <agent-name>}"
 source "$(dirname "$0")/config.sh"
 
 # Extracts the Claude Code OAuth token from macOS Keychain and writes it
@@ -24,4 +25,4 @@ echo "Verifying Claude Code on droplet..."
 remote 'claude --version 2>/dev/null && echo "Claude CLI OK" || echo "WARNING: claude not in PATH (may need: source ~/.bashrc)"'
 
 echo ""
-echo "Done. Next: just onboard"
+echo "Done. Next: just onboard $AGENT_NAME"

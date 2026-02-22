@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+AGENT_NAME="${1:-bake}"
 source "$(dirname "$0")/config.sh"
 
 # Builds a pre-configured DO snapshot so future deploys boot in ~30 seconds.
@@ -93,4 +94,4 @@ doctl compute droplet delete "$DROPLET_ID" --force
 echo ""
 echo "=== Image baked ==="
 echo "Snapshot ID: $SNAPSHOT_ID"
-echo "Run 'just deploy' to boot from this image."
+echo "Run 'just deploy <agent>' to boot from this image."

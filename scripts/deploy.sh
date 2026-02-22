@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
+AGENT_NAME="${1:?Usage: $0 <agent-name>}"
 source "$(dirname "$0")/config.sh"
 
 SNAPSHOT_FILE="$PROJECT_DIR/.snapshot"
 
 if [[ -f "$STATE_FILE" ]]; then
-  echo "Droplet already exists at $(cat "$STATE_FILE"). Run 'just destroy' first."
+  echo "Droplet already exists at $(cat "$STATE_FILE"). Run 'just destroy ${AGENT_NAME}' first."
   exit 1
 fi
 
@@ -20,7 +21,7 @@ else
 fi
 
 # Create droplet
-echo "Creating droplet..."
+echo "Creating droplet '$DROPLET_NAME'..."
 DROPLET_ID=$(doctl compute droplet create "$DROPLET_NAME" \
   --region "$DROPLET_REGION" \
   --size "$DROPLET_SIZE" \
@@ -110,6 +111,6 @@ echo ""
 echo "=== Droplet ready at $IP ==="
 echo ""
 echo "Next steps:"
-echo "  just auth      Transfer Claude Max credentials"
-echo "  just onboard   Run OpenClaw onboarding wizard"
-echo "  just tunnel    Access the dashboard"
+echo "  just auth $AGENT_NAME      Transfer Claude Max credentials"
+echo "  just onboard $AGENT_NAME   Run OpenClaw onboarding"
+echo "  just tunnel $AGENT_NAME    Access the dashboard"

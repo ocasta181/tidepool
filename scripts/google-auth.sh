@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+AGENT_NAME="${1:?Usage: $0 <agent-name>}"
 source "$(dirname "$0")/config.sh"
 
 # Interactive: pushes Google OAuth client secret to the droplet and runs the
@@ -6,7 +7,7 @@ source "$(dirname "$0")/config.sh"
 #
 # Requires:
 #   client_secret.json in the project root (from Google Cloud Console)
-#   GOOGLE_ACCOUNT in .env (your Google email address)
+#   GOOGLE_ACCOUNT in agents/<name>/agent.env (your Google email address)
 
 IP=$(require_droplet)
 
@@ -18,7 +19,7 @@ if [[ ! -f "$CLIENT_SECRET" ]]; then
 fi
 
 if [[ -z "${GOOGLE_ACCOUNT:-}" ]]; then
-  echo "ERROR: GOOGLE_ACCOUNT not set in .env (your Google email address)"
+  echo "ERROR: GOOGLE_ACCOUNT not set in agents/$AGENT_NAME/agent.env"
   exit 1
 fi
 

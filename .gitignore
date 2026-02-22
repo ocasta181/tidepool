@@ -3,6 +3,9 @@
 .snapshot
 .claude
 
+agents/*/.droplet
+agents/*/agent.env
+
 *secret.json
 
 tmp/

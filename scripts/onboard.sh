@@ -1,26 +1,27 @@
 #!/usr/bin/env bash
+AGENT_NAME="${1:?Usage: $0 <agent-name>}"
 source "$(dirname "$0")/config.sh"
 
 # Fully automated onboarding: sets up OpenClaw config, Claude Max auth with
 # auto-refresh, Slack channel, and gateway systemd service. No interactive prompts.
 #
-# Requires in .env:
+# Requires in agents/<name>/agent.env:
 #   SLACK_BOT_TOKEN  - Slack bot token (xoxb-...)
 #   SLACK_APP_TOKEN  - Slack app-level token (xapp-...)
 # Requires:
-#   just auth        - must have been run first (Claude credentials on droplet)
+#   just auth <agent>  - must have been run first (Claude credentials on droplet)
 
 IP=$(require_droplet)
 
 # --- Validate required env vars ---
 
 if [[ -z "${SLACK_BOT_TOKEN:-}" ]]; then
-  echo "ERROR: SLACK_BOT_TOKEN not set in .env"
+  echo "ERROR: SLACK_BOT_TOKEN not set in agents/$AGENT_NAME/agent.env"
   exit 1
 fi
 
 if [[ -z "${SLACK_APP_TOKEN:-}" ]]; then
-  echo "ERROR: SLACK_APP_TOKEN not set in .env"
+  echo "ERROR: SLACK_APP_TOKEN not set in agents/$AGENT_NAME/agent.env"
   exit 1
 fi
 
@@ -42,7 +43,7 @@ CLAUDE_TOKEN=$(ssh "${OPENCLAW_USER}@${IP}" \
   "python3 -c \"import json; print(json.load(open('/home/openclaw/.claude/.credentials.json'))['claudeAiOauth']['accessToken'])\"" 2>/dev/null)
 
 if [[ -z "$CLAUDE_TOKEN" ]]; then
-  echo "ERROR: Could not read Claude credentials. Run 'just auth' first."
+  echo "ERROR: Could not read Claude credentials. Run 'just auth $AGENT_NAME' first."
   exit 1
 fi
 
@@ -97,6 +98,6 @@ echo ""
 echo "=== Onboarding complete ==="
 echo ""
 echo "Next steps:"
-echo "  just secure    Apply security hardening"
-echo "  just status    Check all services"
+echo "  just secure $AGENT_NAME    Apply security hardening"
+echo "  just status $AGENT_NAME    Check all services"
 echo "  Message the bot on Slack to test"
